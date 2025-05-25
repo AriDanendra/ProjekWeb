@@ -1,0 +1,58 @@
+body {
+    background-color: #55b898;
+    font-family: 'Courier New', Courier, monospace;
+    margin: 0;
+  }
+  
+  .login-container {
+    display: flex;
+    height: 100vh;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .login-box {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 10px;
+    text-align: center;
+    width: 300px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  }
+  
+  .login-box .logo {
+    width: 80px;
+    margin-bottom: 1rem;
+  }
+  
+  .login-box h2 {
+    margin-bottom: 1rem;
+    color: #26355D;
+  }
+  
+  .login-box input[type="text"],
+  .login-box input[type="password"] {
+    width: 100%;
+    padding: 0.6rem;
+    margin-bottom: 1rem;
+    border: none;
+    border-bottom: 2px solid #55b898;
+    outline: none;
+  }
+  
+  .login-box button {
+    background-color: #55b898;
+    color: white;
+    padding: 0.6rem;
+    border: none;
+    width: 100%;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .checkbox {
+    text-align: left;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+  }
+  

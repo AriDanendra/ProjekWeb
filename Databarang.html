@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>STOKRAPI - Data Barang</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <aside>
+    <h4>STOKRAPI</h4>
+    <input type="text" class="form-control mb-3" placeholder="Search..." />
+    <a class="nav-link" href="dashboard.html"><i class="bi bi-house-door"></i>Dashboard</a>
+    <a class="nav-link active" href="#"><i class="bi bi-box-seam"></i>Data Barang</a>
+    <a class="nav-link" href="#"><i class="bi bi-box-arrow-in-down"></i>Barang Masuk</a>
+    <a class="nav-link" href="#"><i class="bi bi-box-arrow-up"></i>Barang Keluar</a>
+    <a class="nav-link" href="#"><i class="bi bi-person-circle"></i>Profil</a>
+    <a class="nav-link" href="login.html"><i class="bi bi-box-arrow-right"></i>Logout</a>
+  </aside>
+
+  <div class="main-content">
+    <div class="topbar">
+      <h5 class="mb-0">Data Barang</h5>
+      <div class="admin">
+        <img src="https://via.placeholder.com/35" alt="Admin" />
+        <span>Admin</span>
+      </div>
+    </div>
+
+    <div class="container-wrapper">
+      <button class="btn btn-success btn-tambah" data-bs-toggle="modal" data-bs-target="#tambahModal">
+        + Tambah Barang
+      </button>
+
+      <div class="table-responsive">
+        <table class="table table-bordered table-striped">
+          <thead class="table-success">
+            <tr>
+              <th>Kode Barang</th>
+              <th>Nama Barang</th>
+              <th>Lokasi</th>
+              <th>Harga</th>
+              <th>Stok</th>
+              <th>Tanggal Masuk</th>
+              <th>Tanggal Keluar</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="barangTable">
+            <!-- Data akan dimuat di sini -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Tambah Barang -->
+  <div class="modal fade" id="tambahModal" tabindex="-1" aria-labelledby="tambahModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <form id="tambahForm" class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="tambahModalLabel">Tambah Barang</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" id="cancelTambah"></button>
+        </div>
+        <div class="modal-body">
+          <input type="text" class="form-control mb-2" id="kode_barang" placeholder="Kode Barang" required>
+          <input type="text" class="form-control mb-2" id="nama_barang" placeholder="Nama Barang" required>
+          <input type="text" class="form-control mb-2" id="lokasi" placeholder="Lokasi">
+          <input type="number" class="form-control mb-2" id="harga" placeholder="Harga">
+          <input type="number" class="form-control mb-2" id="stok" placeholder="Stok">
+          <label class="mt-2">Tanggal Masuk</label>
+          <input type="date" class="form-control" id="tanggal_masuk">
+          <label class="mt-2">Tanggal Keluar</label>
+          <input type="date" class="form-control" id="tanggal_keluar">
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-success">Simpan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Edit Barang -->
+  <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <form id="editForm" class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="editModalLabel">Edit Barang</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" id="cancelEdit"></button>
+        </div>
+        <div class="modal-body">
+          <input type="text" class="form-control mb-2" id="edit_kode_barang" placeholder="Kode Barang" readonly>
+          <input type="text" class="form-control mb-2" id="edit_nama_barang" placeholder="Nama Barang" required>
+          <input type="text" class="form-control mb-2" id="edit_lokasi" placeholder="Lokasi">
+          <input type="number" class="form-control mb-2" id="edit_harga" placeholder="Harga">
+          <input type="number" class="form-control mb-2" id="edit_stok" placeholder="Stok">
+          <label class="mt-2">Tanggal Masuk</label>
+          <input type="date" class="form-control" id="edit_tanggal_masuk">
+          <label class="mt-2">Tanggal Keluar</label>
+          <input type="date" class="form-control" id="edit_tanggal_keluar">
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-warning">Update</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Konfirmasi Hapus -->
+  <div class="modal fade" id="hapusModal" tabindex="-1" aria-labelledby="hapusModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title">Konfirmasi Hapus</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          Apakah Anda yakin ingin menghapus barang ini?
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+          <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Hapus</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="Databarang.js"></script>
+</body>
+</html>

@@ -1,0 +1,3 @@
+const recentItems = [...barang]
+  .sort((a, b) => new Date(b.tanggal_masuk || 0) - new Date(a.tanggal_masuk || 0))
+  .slice(0, 5);
