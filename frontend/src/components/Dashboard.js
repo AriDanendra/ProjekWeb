@@ -4,24 +4,35 @@ import { Table } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../styles.css';
 import AvatarInisial from './AvatarInisial';
-import { BsBoxSeam, BsBoxes, BsCurrencyDollar, BsExclamationTriangle, BsBoxArrowRight } from 'react-icons/bs';
+import { BsBoxSeam, BsBoxes, BsCurrencyDollar, BsExclamationTriangle } from 'react-icons/bs';
 import axios from 'axios';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+} from 'recharts';
 
 const API_URL = 'http://localhost:5000/api/barang';
+const RIWAYAT_URL = 'http://localhost:5000/api/riwayat';
 
 const Dashboard = () => {
   const [barang, setBarang] = useState([]);
+  const [riwayat, setRiwayat] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [totalStok, setTotalStok] = useState(0);
   const [totalNilai, setTotalNilai] = useState(0);
   const [lowStockItems, setLowStockItems] = useState(0);
+  const [grafikData, setGrafikData] = useState([]);
 
-  const loadBarang = async () => {
+  const loadData = async () => {
     try {
-      const response = await axios.get(API_URL);
-      setBarang(response.data);
-      calculateTotals(response.data);
+      const [barangRes, riwayatRes] = await Promise.all([
+        axios.get(API_URL),
+        axios.get(RIWAYAT_URL),
+      ]);
+      setBarang(barangRes.data);
+      setRiwayat(riwayatRes.data);
+      calculateTotals(barangRes.data);
+      generateGrafikData(riwayatRes.data);
       setLoading(false);
     } catch (error) {
       setError('Gagal memuat data: ' + (error.response?.data?.message || error.message));
@@ -47,11 +58,33 @@ const Dashboard = () => {
     setLowStockItems(lowStock);
   };
 
+  const generateGrafikData = (riwayatData) => {
+    const masuk = riwayatData.filter(item => item.jenis_transaksi === 'MASUK');
+
+    const grouped = {};
+
+    masuk.forEach(item => {
+      const tanggal = new Date(item.tanggal);
+      const bulan = tanggal.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
+
+      if (!grouped[bulan]) {
+        grouped[bulan] = 0;
+      }
+
+      grouped[bulan] += item.jumlah || 0;
+    });
+
+    const data = Object.keys(grouped).map(key => ({
+      bulan: key,
+      jumlah: grouped[key],
+    }));
+
+    setGrafikData(data);
+  };
+
   useEffect(() => {
-    loadBarang();
-    // eslint-disable-next-line
+    loadData();
   }, []);
-  
 
   if (loading) {
     return (
@@ -90,20 +123,18 @@ const Dashboard = () => {
     );
   }
 
-  // Barang masuk terakhir (5 terbaru)
-  const recentItems = [...barang]
-    .sort((a, b) => new Date(b.tanggal_masuk || 0) - new Date(a.tanggal_masuk || 0))
+  const barangMasukTerbaru = riwayat
+    .filter(item => item.jenis_transaksi === 'MASUK')
     .slice(0, 5);
 
-  // Barang keluar terakhir (5 terbaru)
-  const recentOutItems = [...barang]
-    .filter(item => item.tanggal_keluar)
-    .sort((a, b) => new Date(b.tanggal_keluar || 0) - new Date(a.tanggal_keluar || 0))
+  const barangKeluarTerbaru = riwayat
+    .filter(item => item.jenis_transaksi === 'KELUAR')
     .slice(0, 5);
+
+  const getBarangByKode = (kode) => barang.find(b => b.kode_barang === kode) || {};
 
   return (
     <div className="main-content">
-      {/* Topbar - matching DataBarang.js */}
       <div className="topbar">
         <h5 className="mb-0">Dashboard Gudang</h5>
         <div className="admin d-flex align-items-center gap-2">
@@ -113,55 +144,49 @@ const Dashboard = () => {
       </div>
 
       <div className="container-wrapper">
-        {/* Statistik Cards */}
+        {/* Statistik */}
         <div className="card-box">
           <div className="card card-blue">
             <div className="d-flex align-items-center">
-              <div className="me-3">
-                <BsBoxSeam size={32} />
-              </div>
-              <div>
-                <h6>Total Barang</h6>
-                <h3>{barang.length}</h3>
-              </div>
+              <div className="me-3"><BsBoxSeam size={32} /></div>
+              <div><h6>Total Barang</h6><h3>{barang.length}</h3></div>
             </div>
           </div>
 
           <div className="card card-green">
             <div className="d-flex align-items-center">
-              <div className="me-3">
-                <BsBoxes size={32} />
-              </div>
-              <div>
-                <h6>Total Stok</h6>
-                <h3>{totalStok}</h3>
-              </div>
+              <div className="me-3"><BsBoxes size={32} /></div>
+              <div><h6>Total Stok</h6><h3>{totalStok}</h3></div>
             </div>
           </div>
 
           <div className="card" style={{ backgroundColor: '#ff9800' }}>
             <div className="d-flex align-items-center">
-              <div className="me-3">
-                <BsCurrencyDollar size={32} />
-              </div>
-              <div>
-                <h6>Total Nilai</h6>
-                <h3>Rp {totalNilai.toLocaleString('id-ID')}</h3>
-              </div>
+              <div className="me-3"><BsCurrencyDollar size={32} /></div>
+              <div><h6>Total Nilai</h6><h3>Rp {totalNilai.toLocaleString('id-ID')}</h3></div>
             </div>
           </div>
 
           <div className="card card-red">
             <div className="d-flex align-items-center">
-              <div className="me-3">
-                <BsExclamationTriangle size={32} />
-              </div>
-              <div>
-                <h6>Stok Rendah</h6>
-                <h3>{lowStockItems}</h3>
-              </div>
+              <div className="me-3"><BsExclamationTriangle size={32} /></div>
+              <div><h6>Stok Rendah</h6><h3>{lowStockItems}</h3></div>
             </div>
           </div>
+        </div>
+
+        {/* 📊 Grafik Barang Masuk per Bulan */}
+        <div className="mb-5">
+          <h5 className="mb-3">Grafik Barang Masuk per Bulan</h5>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={grafikData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="bulan" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="jumlah" fill="#4CAF50" />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
 
         {/* Barang Masuk Terakhir */}
@@ -174,29 +199,24 @@ const Dashboard = () => {
                   <th>Kode Barang</th>
                   <th>Nama Barang</th>
                   <th>Lokasi</th>
-                  <th>Stok</th>
-                  <th>Harga Satuan</th>
-                  <th>Harga Total</th>
-                  <th>Tanggal Masuk</th>
+                  <th>Jumlah</th>
+                  <th>Stok Sebelum</th>
+                  <th>Stok Sesudah</th>
+                  <th>Tanggal</th>
                 </tr>
               </thead>
               <tbody>
-                {recentItems.map(item => {
-                  const hargaSatuan = item.harga || 0;
-                  const stok = item.stok || 0;
-                  const hargaTotal = hargaSatuan * stok;
-                  
+                {barangMasukTerbaru.map((item, idx) => {
+                  const detail = getBarangByKode(item.kode_barang);
                   return (
-                    <tr key={item.kode_barang}>
+                    <tr key={idx}>
                       <td>{item.kode_barang}</td>
-                      <td>{item.nama_barang}</td>
-                      <td>{item.lokasi || '-'}</td>
-                      <td className={stok < 5 ? 'text-danger fw-bold' : ''}>
-                        {stok} {stok < 5 && '(Low)'}
-                      </td>
-                      <td>Rp {hargaSatuan.toLocaleString('id-ID')}</td>
-                      <td>Rp {hargaTotal.toLocaleString('id-ID')}</td>
-                      <td>{item.tanggal_masuk || '-'}</td>
+                      <td>{detail.nama_barang || '-'}</td>
+                      <td>{detail.lokasi || '-'}</td>
+                      <td>{item.jumlah}</td>
+                      <td>{item.stok_sebelum}</td>
+                      <td>{item.stok_sesudah}</td>
+                      <td>{item.tanggal}</td>
                     </tr>
                   );
                 })}
@@ -207,9 +227,7 @@ const Dashboard = () => {
 
         {/* Barang Keluar Terakhir */}
         <div className="mb-4">
-          <h5 className="mb-3">
-            Barang Keluar Terakhir
-          </h5>
+          <h5 className="mb-3">Barang Keluar Terakhir</h5>
           <div className="table-responsive">
             <Table striped bordered hover>
               <thead className="table-danger">
@@ -217,42 +235,33 @@ const Dashboard = () => {
                   <th>Kode Barang</th>
                   <th>Nama Barang</th>
                   <th>Lokasi</th>
-                  <th>Stok</th>
-                  <th>Harga Satuan</th>
-                  <th>Tanggal Keluar</th>
+                  <th>Jumlah</th>
+                  <th>Stok Sebelum</th>
+                  <th>Stok Sesudah</th>
+                  <th>Tanggal</th>
                 </tr>
               </thead>
               <tbody>
-                {recentOutItems.map(item => {
-                  const hargaSatuan = item.harga || 0;
-                  const stok = item.stok || 0;
-                  
+                {barangKeluarTerbaru.map((item, idx) => {
+                  const detail = getBarangByKode(item.kode_barang);
                   return (
-                    <tr key={item.kode_barang}>
+                    <tr key={idx}>
                       <td>{item.kode_barang}</td>
-                      <td>{item.nama_barang}</td>
-                      <td>{item.lokasi || '-'}</td>
-                      <td className={stok < 5 ? 'text-danger fw-bold' : ''}>
-                        {stok} {stok < 5 && '(Low)'}
-                      </td>
-                      <td>Rp {hargaSatuan.toLocaleString('id-ID')}</td>
-                      <td>{item.tanggal_keluar || '-'}</td>
+                      <td>{detail.nama_barang || '-'}</td>
+                      <td>{detail.lokasi || '-'}</td>
+                      <td>{item.jumlah}</td>
+                      <td>{item.stok_sebelum}</td>
+                      <td>{item.stok_sesudah}</td>
+                      <td>{item.tanggal}</td>
                     </tr>
                   );
                 })}
-                {recentOutItems.length === 0 && (
-                  <tr>
-                    <td colSpan="6" className="text-center py-3">
-                      Tidak ada data barang keluar
-                    </td>
-                  </tr>
-                )}
               </tbody>
             </Table>
           </div>
         </div>
 
-        {/* Daftar Barang dengan Stok Rendah */}
+        {/* Barang dengan Stok Rendah */}
         <div>
           <h5 className="mb-3">Barang dengan Stok Rendah (&lt;5)</h5>
           <div className="table-responsive">
@@ -269,19 +278,16 @@ const Dashboard = () => {
               </thead>
               <tbody>
                 {barang.filter(item => (item.stok || 0) < 5).map(item => {
-                  const hargaSatuan = item.harga || 0;
-                  const stok = item.stok || 0;
-                  const hargaTotal = hargaSatuan * stok;
-                  
+                  const hargaTotal = (item.harga || 0) * (item.stok || 0);
                   return (
                     <tr key={item.kode_barang}>
                       <td>{item.kode_barang}</td>
                       <td>{item.nama_barang}</td>
                       <td>{item.lokasi || '-'}</td>
                       <td className="text-danger fw-bold">
-                        {stok} (Low)
+                        {item.stok} (Low)
                       </td>
-                      <td>Rp {hargaSatuan.toLocaleString('id-ID')}</td>
+                      <td>Rp {item.harga.toLocaleString('id-ID')}</td>
                       <td>Rp {hargaTotal.toLocaleString('id-ID')}</td>
                     </tr>
                   );

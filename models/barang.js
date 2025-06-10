@@ -10,9 +10,7 @@ const Barang = sequelize.define('Barang', {
   nama_barang: DataTypes.STRING,
   lokasi: DataTypes.STRING,
   harga: DataTypes.INTEGER,
-  stok: DataTypes.INTEGER,
-  tanggal_masuk: DataTypes.DATEONLY,
-  tanggal_keluar: DataTypes.DATEONLY,
+  stok: DataTypes.INTEGER
 }, {
   freezeTableName: true
 });

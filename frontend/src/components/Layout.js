@@ -6,7 +6,8 @@ import {
   BsBoxArrowInDown, 
   BsBoxArrowUp, 
   BsPerson, 
-  BsBoxArrowRight 
+  BsBoxArrowRight,
+  BsClockHistory
 } from 'react-icons/bs';
 
 const Layout = ({ children }) => {
@@ -16,13 +17,7 @@ const Layout = ({ children }) => {
     <div className="app-container">
       <aside>
         <h4>STOKRAPI</h4>
-        <div className="search-box mb-3">
-          <input 
-            type="text" 
-            className="form-control" 
-            placeholder="Search..." 
-          />
-        </div>
+        
         
         <Link 
           className={`nav-link ${location.pathname === '/dashboard' ? 'active' : ''}`}
@@ -50,6 +45,14 @@ const Layout = ({ children }) => {
           to="/barang-keluar"
         >
           <BsBoxArrowUp className="nav-icon" /> Barang Keluar
+        </Link>
+
+        {/* Tambahkan link Riwayat Stok */}
+        <Link 
+          className={`nav-link ${location.pathname === '/riwayat-stok' ? 'active' : ''}`}
+          to="/riwayat-stok"
+        >
+          <BsClockHistory className="nav-icon" /> Riwayat Stok
         </Link>
 
         <Link 

@@ -14,15 +14,18 @@ const DataBarang = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState(null);
+  const [errorKode, setErrorKode] = useState('');
   const [formData, setFormData] = useState({
     kode_barang: '',
     nama_barang: '',
     lokasi: '',
     harga: '',
-    stok: ''
+    stok: 0
   });
   const [totalStok, setTotalStok] = useState(0);
   const [totalNilai, setTotalNilai] = useState(0);
+
+  const lokasiOptions = ['Rak 1', 'Rak 2','Rak 3', 'Rak 4'];
 
   const loadBarang = async () => {
     try {
@@ -51,30 +54,36 @@ const DataBarang = () => {
 
   useEffect(() => {
     loadBarang();
-    // eslint-disable-next-line
   }, []);
 
   const handleInputChange = (e) => {
     const { id, value } = e.target;
+    if (id === 'kode_barang') setErrorKode('');
     setFormData({
       ...formData,
-      [id]: id === 'harga' || id === 'stok' ? parseInt(value) || 0 : value
+      [id]: id === 'harga' ? parseInt(value) || 0 : value
     });
   };
 
   const handleSubmitAdd = async (e) => {
     e.preventDefault();
+    const isKodeExist = barang.some(item => item.kode_barang === formData.kode_barang);
+    if (isKodeExist) {
+      setErrorKode('Kode barang sudah digunakan.');
+      return;
+    }
+
     try {
-       // eslint-disable-next-line
-      const response = await axios.post(API_URL, formData);
-      
+      setErrorKode('');
+      const dataToSubmit = { ...formData, stok: 0 };
+      await axios.post(API_URL, dataToSubmit);
       setShowAddModal(false);
       setFormData({
         kode_barang: '',
         nama_barang: '',
         lokasi: '',
         harga: '',
-        stok: ''
+        stok: 0
       });
       await loadBarang();
       alert('Data berhasil ditambahkan!');
@@ -89,7 +98,7 @@ const DataBarang = () => {
       nama_barang: item.nama_barang,
       lokasi: item.lokasi || '',
       harga: item.harga || '',
-      stok: item.stok || ''
+      stok: item.stok || 0
     });
     setShowEditModal(true);
   };
@@ -98,7 +107,6 @@ const DataBarang = () => {
     e.preventDefault();
     try {
       await axios.put(`${API_URL}/${formData.kode_barang}`, formData);
-      
       setShowEditModal(false);
       await loadBarang();
       alert('Data berhasil diperbarui!');
@@ -117,7 +125,6 @@ const DataBarang = () => {
 
     try {
       await axios.delete(`${API_URL}/${deleteTargetId}`);
-      
       setShowDeleteModal(false);
       await loadBarang();
       alert('Data berhasil dihapus!');
@@ -148,8 +155,8 @@ const DataBarang = () => {
                 <th>Kode Barang</th>
                 <th>Nama Barang</th>
                 <th>Lokasi</th>
-                <th>Harga Satuan</th>
                 <th>Stok</th>
+                <th>Harga Satuan</th>
                 <th>Harga Total</th>
                 <th>Aksi</th>
               </tr>
@@ -170,8 +177,8 @@ const DataBarang = () => {
                       <td>{item.kode_barang}</td>
                       <td>{item.nama_barang}</td>
                       <td>{item.lokasi || '-'}</td>
-                      <td>{`Rp ${hargaSatuan.toLocaleString('id-ID')}`}</td>
                       <td>{stok}</td>
+                      <td>{`Rp ${hargaSatuan.toLocaleString('id-ID')}`}</td>
                       <td>{`Rp ${hargaTotal.toLocaleString('id-ID')}`}</td>
                       <td>
                         <Button variant="warning" size="sm" onClick={() => handleEdit(item)}>
@@ -191,8 +198,9 @@ const DataBarang = () => {
               )}
               {barang.length > 0 && (
                 <tr className="fw-bold bg-light">
-                  <td colSpan="4" className="text-end">Total</td>
+                  <td colSpan="3" className="text-end">Total</td>
                   <td>{totalStok}</td>
+                  <td>{`Rp ${barang.reduce((sum, item) => sum + (item.harga || 0), 0).toLocaleString('id-ID')}`}</td>
                   <td>{`Rp ${totalNilai.toLocaleString('id-ID')}`}</td>
                   <td></td>
                 </tr>
@@ -211,13 +219,15 @@ const DataBarang = () => {
           <Modal.Body>
             <Form.Control
               type="text"
-              className="mb-2"
+              className={`mb-1 ${errorKode ? 'is-invalid' : ''}`}
               id="kode_barang"
               placeholder="Kode Barang"
               value={formData.kode_barang}
               onChange={handleInputChange}
               required
             />
+            {errorKode && <div className="text-danger mb-2">{errorKode}</div>}
+
             <Form.Control
               type="text"
               className="mb-2"
@@ -227,28 +237,26 @@ const DataBarang = () => {
               onChange={handleInputChange}
               required
             />
-            <Form.Control
-              type="text"
+
+            <Form.Select
               className="mb-2"
               id="lokasi"
-              placeholder="Lokasi"
               value={formData.lokasi}
               onChange={handleInputChange}
-            />
+              required
+            >
+              <option value="">-- Pilih Lokasi --</option>
+              {lokasiOptions.map((lok, index) => (
+                <option key={index} value={lok}>{lok}</option>
+              ))}
+            </Form.Select>
+
             <Form.Control
               type="number"
               className="mb-2"
               id="harga"
               placeholder="Harga"
               value={formData.harga}
-              onChange={handleInputChange}
-            />
-            <Form.Control
-              type="number"
-              className="mb-2"
-              id="stok"
-              placeholder="Stok"
-              value={formData.stok}
               onChange={handleInputChange}
             />
           </Modal.Body>
@@ -288,28 +296,24 @@ const DataBarang = () => {
               onChange={handleInputChange}
               required
             />
-            <Form.Control
-              type="text"
+            <Form.Select
               className="mb-2"
               id="lokasi"
-              placeholder="Lokasi"
               value={formData.lokasi}
               onChange={handleInputChange}
-            />
+              required
+            >
+              <option value="">-- Pilih Lokasi --</option>
+              {lokasiOptions.map((lok, index) => (
+                <option key={index} value={lok}>{lok}</option>
+              ))}
+            </Form.Select>
             <Form.Control
               type="number"
               className="mb-2"
               id="harga"
               placeholder="Harga"
               value={formData.harga}
-              onChange={handleInputChange}
-            />
-            <Form.Control
-              type="number"
-              className="mb-2"
-              id="stok"
-              placeholder="Stok"
-              value={formData.stok}
               onChange={handleInputChange}
             />
           </Modal.Body>

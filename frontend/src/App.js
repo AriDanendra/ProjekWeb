@@ -6,6 +6,7 @@ import Dashboard from './components/Dashboard';
 import Login from './components/Login';
 import BarangMasuk from './components/BarangMasuk';
 import BarangKeluar from './components/BarangKeluar';
+import RiwayatStok from './components/RiwayatStok';
 
 function App() {
   // Anda bisa menambahkan logika autentikasi di sini
@@ -54,6 +55,15 @@ function App() {
           element={
             <Layout>
               <BarangKeluar />
+            </Layout>
+          }
+        />
+
+        <Route
+          path="/riwayat-stok"
+          element={
+            <Layout>
+              <RiwayatStok />
             </Layout>
           }
         />

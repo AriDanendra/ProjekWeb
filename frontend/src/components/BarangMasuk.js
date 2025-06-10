@@ -1,10 +1,10 @@
-// src/components/BarangMasuk.js
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Table, Form } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../styles.css';
 import AvatarInisial from './AvatarInisial';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const API_URL = 'http://localhost:5000/api/barang';
 
@@ -14,9 +14,21 @@ const BarangMasuk = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [formData, setFormData] = useState({
     kode_barang: '',
-    tanggal_masuk: new Date().toISOString().split('T')[0] // Default to today's date
+    keterangan: '',
+    tanggal: new Date().toISOString().split('T')[0] // Default to today's date
   });
   const [stokToAdd, setStokToAdd] = useState(1);
+  const [showNotifModal, setShowNotifModal] = useState(false);
+  const [notifMessage, setNotifMessage] = useState('');
+  const navigate = useNavigate();
+
+  const showNotification = (message) => {
+    setNotifMessage(message);
+    setShowNotifModal(true);
+    setTimeout(() => {
+      setShowNotifModal(false);
+    }, 2000);
+  };
 
   const loadData = async () => {
     try {
@@ -26,7 +38,11 @@ const BarangMasuk = () => {
         return rest;
       });
       setBarang(filteredData);
-      setBarangMasuk(filteredData.filter(item => item.tanggal_masuk));
+      // Sort by tanggal_masuk descending
+      const sortedBarangMasuk = filteredData
+        .filter(item => item.tanggal_masuk)
+        .sort((a, b) => new Date(b.tanggal_masuk) - new Date(a.tanggal_masuk));
+      setBarangMasuk(sortedBarangMasuk);
     } catch (error) {
       alert('Gagal memuat data: ' + error.message);
     }
@@ -51,34 +67,48 @@ const BarangMasuk = () => {
   const handleSubmitAdd = async (e) => {
     e.preventDefault();
     try {
-      // Find the selected item
       const selectedItem = barang.find(item => item.kode_barang === formData.kode_barang);
+      if (!selectedItem) throw new Error('Barang tidak ditemukan');
+
+      // Validate the date is not in the future
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const selectedDate = new Date(formData.tanggal);
       
-      if (!selectedItem) {
-        throw new Error('Barang tidak ditemukan');
+      if (selectedDate > today) {
+        throw new Error('Tanggal tidak boleh lebih dari hari ini');
       }
 
-      // Prepare update data
       const updateData = {
         ...selectedItem,
         stok: (selectedItem.stok || 0) + stokToAdd,
-        tanggal_masuk: formData.tanggal_masuk
+        tanggal_masuk: formData.tanggal
       };
 
-      // Update the item
-      await axios.put(`${API_URL}/${formData.kode_barang}`, updateData);
-      
+      await axios.put(`${API_URL}/${formData.kode_barang}`, {
+        ...updateData,
+        keterangan: formData.keterangan || `Penambahan stok masuk ${stokToAdd} unit`,
+      });
+
       setShowAddModal(false);
       setFormData({
         kode_barang: '',
-        tanggal_masuk: new Date().toISOString().split('T')[0]
+        keterangan: '',
+        tanggal: new Date().toISOString().split('T')[0] // Reset to today's date
       });
       setStokToAdd(1);
+
       await loadData();
-      alert('Barang masuk berhasil dicatat!');
+      showNotification('Barang masuk berhasil dicatat!');
     } catch (error) {
       alert(error.response?.data?.message || error.message);
     }
+  };
+
+  const formatTanggal = (dateString) => {
+    if (!dateString) return '-';
+    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+    return new Date(dateString).toLocaleDateString('id-ID', options);
   };
 
   return (
@@ -92,11 +122,11 @@ const BarangMasuk = () => {
       </div>
 
       <div className="container-wrapper">
-        <Button variant="success" onClick={() => setShowAddModal(true)}>
+        <Button variant="success" onClick={() => setShowAddModal(true)} className="mb-3">
           + Tambah Barang Masuk
         </Button>
 
-        <div className="table-responsive mt-3">
+        <div className="table-responsive">
           <Table striped bordered hover>
             <thead className="table-success">
               <tr>
@@ -106,12 +136,13 @@ const BarangMasuk = () => {
                 <th>Harga</th>
                 <th>Stok</th>
                 <th>Tanggal Masuk</th>
+                <th>Aksi</th>
               </tr>
             </thead>
             <tbody>
               {barangMasuk.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="text-center">Tidak ada data barang masuk</td>
+                  <td colSpan="7" className="text-center">Tidak ada data barang masuk</td>
                 </tr>
               ) : (
                 barangMasuk.map((item) => (
@@ -121,7 +152,16 @@ const BarangMasuk = () => {
                     <td>{item.lokasi || '-'}</td>
                     <td>{`Rp ${(item.harga || 0).toLocaleString('id-ID')}`}</td>
                     <td>{item.stok || 0}</td>
-                    <td>{item.tanggal_masuk || '-'}</td>
+                    <td>{formatTanggal(item.tanggal_masuk)}</td>
+                    <td>
+                      <Button 
+                        variant="info" 
+                        size="sm"
+                        onClick={() => navigate(`/riwayat-stok/${item.kode_barang}`)}
+                      >
+                        Lihat Riwayat
+                      </Button>
+                    </td>
                   </tr>
                 ))
               )}
@@ -154,16 +194,6 @@ const BarangMasuk = () => {
               </Form.Control>
             </Form.Group>
 
-            <Form.Group controlId="tanggal_masuk" className="mb-3">
-              <Form.Label>Tanggal Masuk</Form.Label>
-              <Form.Control
-                type="date"
-                value={formData.tanggal_masuk}
-                onChange={handleInputChange}
-                required
-              />
-            </Form.Group>
-
             <Form.Group controlId="stok" className="mb-3">
               <Form.Label>Jumlah Stok yang Ditambahkan</Form.Label>
               <Form.Control
@@ -174,16 +204,54 @@ const BarangMasuk = () => {
                 required
               />
             </Form.Group>
+
+            <Form.Group controlId="tanggal" className="mb-3">
+              <Form.Label>Tanggal Masuk</Form.Label>
+              <Form.Control
+                type="date"
+                value={formData.tanggal}
+                onChange={handleInputChange}
+                max={new Date().toISOString().split('T')[0]} // Prevent future dates
+                required
+              />
+              <Form.Text className="text-muted">
+                Pilih tanggal sesuai tanggal barang masuk
+              </Form.Text>
+            </Form.Group>
+
+            <Form.Group controlId="keterangan" className="mb-3">
+              <Form.Label>Keterangan (Opsional)</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={2}
+                value={formData.keterangan}
+                onChange={handleInputChange}
+                placeholder="Contoh: Pembelian dari supplier A"
+              />
+            </Form.Group>
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowAddModal(false)}>
+            <Button variant="secondary" onClick={() => {
+              setShowAddModal(false);
+              setFormData({
+                kode_barang: '',
+                keterangan: '',
+                tanggal: new Date().toISOString().split('T')[0]
+              });
+              setStokToAdd(1);
+            }}>
               Batal
             </Button>
-            <Button variant="success" type="submit">
-              Simpan
-            </Button>
+            <Button variant="success" type="submit">Simpan</Button>
           </Modal.Footer>
         </Form>
+      </Modal>
+
+      {/* Modal Notifikasi Sukses */}
+      <Modal show={showNotifModal} onHide={() => setShowNotifModal(false)} centered backdrop="static">
+        <Modal.Body className="text-center">
+          <div className="text-success fw-bold fs-5">{notifMessage}</div>
+        </Modal.Body>
       </Modal>
     </div>
   );

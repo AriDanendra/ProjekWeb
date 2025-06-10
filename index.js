@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const sequelize = require('./config/db');
 const barangRoutes = require('./routes/barang');
 const userRoutes = require('./routes/user');
+const riwayatRoutes = require('./routes/riwayat');
 const path = require('path');
 
 const app = express();
@@ -16,6 +17,7 @@ app.use(express.static(path.join(__dirname)));
 // API Routes
 app.use('/api/barang', barangRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/riwayat', riwayatRoutes);
 
 // Route untuk halaman login
 app.get('/login', (req, res) => {
