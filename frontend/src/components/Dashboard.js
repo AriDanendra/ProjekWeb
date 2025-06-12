@@ -1,4 +1,3 @@
-// src/components/Dashboard.js
 import React, { useState, useEffect } from 'react';
 import { Table } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -21,7 +20,8 @@ const Dashboard = () => {
   const [totalStok, setTotalStok] = useState(0);
   const [totalNilai, setTotalNilai] = useState(0);
   const [lowStockItems, setLowStockItems] = useState(0);
-  const [grafikData, setGrafikData] = useState([]);
+  const [grafikMasuk, setGrafikMasuk] = useState([]);
+  const [grafikKeluar, setGrafikKeluar] = useState([]);
 
   const loadData = async () => {
     try {
@@ -32,7 +32,7 @@ const Dashboard = () => {
       setBarang(barangRes.data);
       setRiwayat(riwayatRes.data);
       calculateTotals(barangRes.data);
-      generateGrafikData(riwayatRes.data);
+      generateGrafik(barangRes.data, riwayatRes.data);
       setLoading(false);
     } catch (error) {
       setError('Gagal memuat data: ' + (error.response?.data?.message || error.message));
@@ -58,28 +58,39 @@ const Dashboard = () => {
     setLowStockItems(lowStock);
   };
 
-  const generateGrafikData = (riwayatData) => {
-    const masuk = riwayatData.filter(item => item.jenis_transaksi === 'MASUK');
+  const generateGrafik = (barangData, riwayatData) => {
+    const masuk = {};
+    const keluar = {};
 
-    const grouped = {};
+    riwayatData.forEach(item => {
+      const date = new Date(item.tanggal);
+      const key = `${date.getFullYear()}-${date.getMonth()}`;
+      const jumlah = item.jumlah || 0;
 
-    masuk.forEach(item => {
-      const tanggal = new Date(item.tanggal);
-      const bulan = tanggal.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
-
-      if (!grouped[bulan]) {
-        grouped[bulan] = 0;
+      if (item.jenis_transaksi === 'MASUK') {
+        masuk[key] = (masuk[key] || 0) + jumlah;
+      } else if (item.jenis_transaksi === 'KELUAR') {
+        keluar[key] = (keluar[key] || 0) + jumlah;
       }
-
-      grouped[bulan] += item.jumlah || 0;
     });
 
-    const data = Object.keys(grouped).map(key => ({
-      bulan: key,
-      jumlah: grouped[key],
-    }));
+    const allKeys = new Set([...Object.keys(masuk), ...Object.keys(keluar)]);
+    const grafikGabungan = Array.from(allKeys).map(key => {
+      const [year, month] = key.split('-');
+      return {
+        bulan: new Date(year, month).toLocaleString('id-ID', { month: 'long', year: 'numeric' }),
+        masuk: masuk[key] || 0,
+        keluar: keluar[key] || 0,
+      };
+    }).sort((a, b) => {
+      const [bulanA, tahunA] = a.bulan.split(' ');
+      const [bulanB, tahunB] = b.bulan.split(' ');
+      const dateA = new Date(`${bulanA} 1, ${tahunA}`);
+      const dateB = new Date(`${bulanB} 1, ${tahunB}`);
+      return dateA - dateB;
+    });
 
-    setGrafikData(data);
+    setGrafikMasuk(grafikGabungan);
   };
 
   useEffect(() => {
@@ -175,16 +186,17 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* 📊 Grafik Barang Masuk per Bulan */}
+        {/* 📊 Grafik Gabungan */}
         <div className="mb-5">
-          <h5 className="mb-3">Grafik Barang Masuk per Bulan</h5>
+          <h5 className="mb-3">Grafik Barang Masuk & Keluar per Bulan</h5>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={grafikData}>
+            <BarChart data={grafikMasuk}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="bulan" />
               <YAxis />
               <Tooltip />
-              <Bar dataKey="jumlah" fill="#4CAF50" />
+              <Bar dataKey="masuk" fill="#4CAF50" name="Masuk" />
+              <Bar dataKey="keluar" fill="#f44336" name="Keluar" />
             </BarChart>
           </ResponsiveContainer>
         </div>

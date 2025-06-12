@@ -1,4 +1,3 @@
-// src/components/DataBarang.js
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Table, Form } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -25,7 +24,27 @@ const DataBarang = () => {
   const [totalStok, setTotalStok] = useState(0);
   const [totalNilai, setTotalNilai] = useState(0);
 
-  const lokasiOptions = ['Rak 1', 'Rak 2','Rak 3', 'Rak 4'];
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+
+  const lokasiOptions = ['Rak 1', 'Rak 2', 'Rak 3', 'Rak 4'];
+
+  const resetFormData = () => {
+    setFormData({
+      kode_barang: '',
+      nama_barang: '',
+      lokasi: '',
+      harga: '',
+      stok: 0
+    });
+    setErrorKode('');
+  };
+
+  const showSuccess = (message) => {
+    setSuccessMessage(message);
+    setShowSuccessModal(true);
+    setTimeout(() => setShowSuccessModal(false), 2500);
+  };
 
   const loadBarang = async () => {
     try {
@@ -61,7 +80,7 @@ const DataBarang = () => {
     if (id === 'kode_barang') setErrorKode('');
     setFormData({
       ...formData,
-      [id]: id === 'harga' ? parseInt(value) || 0 : value
+      [id]: value
     });
   };
 
@@ -74,19 +93,16 @@ const DataBarang = () => {
     }
 
     try {
-      setErrorKode('');
-      const dataToSubmit = { ...formData, stok: 0 };
+      const dataToSubmit = {
+        ...formData,
+        harga: parseInt(formData.harga) || 0,
+        stok: 0
+      };
       await axios.post(API_URL, dataToSubmit);
       setShowAddModal(false);
-      setFormData({
-        kode_barang: '',
-        nama_barang: '',
-        lokasi: '',
-        harga: '',
-        stok: 0
-      });
+      resetFormData();
       await loadBarang();
-      alert('Data berhasil ditambahkan!');
+      showSuccess('Barang berhasil ditambahkan!');
     } catch (error) {
       alert(error.response?.data?.message || error.message);
     }
@@ -97,7 +113,7 @@ const DataBarang = () => {
       kode_barang: item.kode_barang,
       nama_barang: item.nama_barang,
       lokasi: item.lokasi || '',
-      harga: item.harga || '',
+      harga: item.harga?.toString() || '',
       stok: item.stok || 0
     });
     setShowEditModal(true);
@@ -106,10 +122,15 @@ const DataBarang = () => {
   const handleSubmitEdit = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(`${API_URL}/${formData.kode_barang}`, formData);
+      const dataToSubmit = {
+        ...formData,
+        harga: parseInt(formData.harga) || 0
+      };
+      await axios.put(`${API_URL}/${formData.kode_barang}`, dataToSubmit);
       setShowEditModal(false);
+      resetFormData();
       await loadBarang();
-      alert('Data berhasil diperbarui!');
+      showSuccess('Barang berhasil diperbarui!');
     } catch (error) {
       alert(error.response?.data?.message || error.message);
     }
@@ -127,7 +148,7 @@ const DataBarang = () => {
       await axios.delete(`${API_URL}/${deleteTargetId}`);
       setShowDeleteModal(false);
       await loadBarang();
-      alert('Data berhasil dihapus!');
+      showSuccess('Barang berhasil dihapus!');
     } catch (error) {
       alert(error.response?.data?.message || error.message);
     }
@@ -144,11 +165,11 @@ const DataBarang = () => {
       </div>
 
       <div className="container-wrapper">
-        <Button variant="success" onClick={() => setShowAddModal(true)}>
+        <Button variant="success" onClick={() => { setShowAddModal(true); resetFormData(); }}>
           + Tambah Barang
         </Button>
 
-        <div className="table-responsive">
+        <div className="table-responsive mt-3">
           <Table striped bordered hover>
             <thead className="table-success">
               <tr>
@@ -210,120 +231,118 @@ const DataBarang = () => {
         </div>
       </div>
 
-      {/* Modal Tambah Barang */}
-      <Modal show={showAddModal} onHide={() => setShowAddModal(false)}>
+      {/* Modal Tambah */}
+      <Modal show={showAddModal} onHide={() => { setShowAddModal(false); resetFormData(); }}>
         <Modal.Header closeButton>
           <Modal.Title>Tambah Barang</Modal.Title>
         </Modal.Header>
         <Form onSubmit={handleSubmitAdd}>
           <Modal.Body>
-            <Form.Control
-              type="text"
-              className={`mb-1 ${errorKode ? 'is-invalid' : ''}`}
-              id="kode_barang"
-              placeholder="Kode Barang"
-              value={formData.kode_barang}
-              onChange={handleInputChange}
-              required
-            />
-            {errorKode && <div className="text-danger mb-2">{errorKode}</div>}
+            <Form.Group className="mb-3">
+              <Form.Label>Kode Barang</Form.Label>
+              <Form.Control
+                type="text"
+                id="kode_barang"
+                value={formData.kode_barang}
+                onChange={handleInputChange}
+                isInvalid={!!errorKode}
+                required
+              />
+              <Form.Control.Feedback type="invalid">
+                {errorKode}
+              </Form.Control.Feedback>
+            </Form.Group>
 
-            <Form.Control
-              type="text"
-              className="mb-2"
-              id="nama_barang"
-              placeholder="Nama Barang"
-              value={formData.nama_barang}
-              onChange={handleInputChange}
-              required
-            />
+            <Form.Group className="mb-3">
+              <Form.Label>Nama Barang</Form.Label>
+              <Form.Control
+                type="text"
+                id="nama_barang"
+                value={formData.nama_barang}
+                onChange={handleInputChange}
+                required
+              />
+            </Form.Group>
 
-            <Form.Select
-              className="mb-2"
-              id="lokasi"
-              value={formData.lokasi}
-              onChange={handleInputChange}
-              required
-            >
-              <option value="">-- Pilih Lokasi --</option>
-              {lokasiOptions.map((lok, index) => (
-                <option key={index} value={lok}>{lok}</option>
-              ))}
-            </Form.Select>
+            <Form.Group className="mb-3">
+              <Form.Label>Lokasi</Form.Label>
+              <Form.Select
+                id="lokasi"
+                value={formData.lokasi}
+                onChange={handleInputChange}
+                required
+              >
+                <option value="">-- Pilih Lokasi --</option>
+                {lokasiOptions.map((lok, index) => (
+                  <option key={index} value={lok}>{lok}</option>
+                ))}
+              </Form.Select>
+            </Form.Group>
 
-            <Form.Control
-              type="number"
-              className="mb-2"
-              id="harga"
-              placeholder="Harga"
-              value={formData.harga}
-              onChange={handleInputChange}
-            />
+            <Form.Group>
+              <Form.Label>Harga (Rp)</Form.Label>
+              <Form.Control
+                type="number"
+                id="harga"
+                value={formData.harga ?? ''}
+                onChange={handleInputChange}
+                min="0"
+                placeholder="Contoh: 1500000"
+              />
+            </Form.Group>
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowAddModal(false)}>
+            <Button variant="secondary" onClick={() => { setShowAddModal(false); resetFormData(); }}>
               Batal
             </Button>
-            <Button variant="success" type="submit">
-              Simpan
-            </Button>
+            <Button variant="success" type="submit">Simpan</Button>
           </Modal.Footer>
         </Form>
       </Modal>
 
-      {/* Modal Edit Barang */}
-      <Modal show={showEditModal} onHide={() => setShowEditModal(false)}>
+      {/* Modal Edit */}
+      <Modal show={showEditModal} onHide={() => { setShowEditModal(false); resetFormData(); }}>
         <Modal.Header closeButton>
           <Modal.Title>Edit Barang</Modal.Title>
         </Modal.Header>
         <Form onSubmit={handleSubmitEdit}>
           <Modal.Body>
-            <Form.Control
-              type="text"
-              className="mb-2"
-              id="kode_barang"
-              placeholder="Kode Barang"
-              value={formData.kode_barang}
-              onChange={handleInputChange}
-              readOnly
-            />
-            <Form.Control
-              type="text"
-              className="mb-2"
-              id="nama_barang"
-              placeholder="Nama Barang"
-              value={formData.nama_barang}
-              onChange={handleInputChange}
-              required
-            />
-            <Form.Select
-              className="mb-2"
-              id="lokasi"
-              value={formData.lokasi}
-              onChange={handleInputChange}
-              required
-            >
-              <option value="">-- Pilih Lokasi --</option>
-              {lokasiOptions.map((lok, index) => (
-                <option key={index} value={lok}>{lok}</option>
-              ))}
-            </Form.Select>
-            <Form.Control
-              type="number"
-              className="mb-2"
-              id="harga"
-              placeholder="Harga"
-              value={formData.harga}
-              onChange={handleInputChange}
-            />
+            <Form.Group className="mb-3">
+              <Form.Label>Kode Barang</Form.Label>
+              <Form.Control type="text" id="kode_barang" value={formData.kode_barang} readOnly />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Nama Barang</Form.Label>
+              <Form.Control type="text" id="nama_barang" value={formData.nama_barang} onChange={handleInputChange} required />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Lokasi</Form.Label>
+              <Form.Select id="lokasi" value={formData.lokasi} onChange={handleInputChange} required>
+                <option value="">-- Pilih Lokasi --</option>
+                {lokasiOptions.map((lok, index) => (
+                  <option key={index} value={lok}>{lok}</option>
+                ))}
+              </Form.Select>
+            </Form.Group>
+
+            <Form.Group>
+              <Form.Label>Harga (Rp)</Form.Label>
+              <Form.Control
+                type="number"
+                id="harga"
+                value={formData.harga ?? ''}
+                onChange={handleInputChange}
+                min="0"
+              />
+            </Form.Group>
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowEditModal(false)}>
+            <Button variant="secondary" onClick={() => { setShowEditModal(false); resetFormData(); }}>
               Batal
             </Button>
-            <Button variant="warning" type="submit">
-              Update
-            </Button>
+            <Button variant="warning" type="submit">Update</Button>
           </Modal.Footer>
         </Form>
       </Modal>
@@ -333,15 +352,26 @@ const DataBarang = () => {
         <Modal.Header closeButton className="bg-danger text-white">
           <Modal.Title>Konfirmasi Hapus</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          Apakah Anda yakin ingin menghapus barang ini?
-        </Modal.Body>
+        <Modal.Body>Apakah Anda yakin ingin menghapus barang ini?</Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
             Batal
           </Button>
           <Button variant="danger" onClick={confirmDelete}>
             Hapus
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Modal Sukses */}
+      <Modal show={showSuccessModal} onHide={() => setShowSuccessModal(false)} centered>
+        <Modal.Header closeButton className="bg-success text-white">
+          <Modal.Title>Berhasil</Modal.Title>
+        </Modal.Header>
+        <Modal.Body><p className="mb-0">{successMessage}</p></Modal.Body>
+        <Modal.Footer>
+          <Button variant="success" onClick={() => setShowSuccessModal(false)}>
+            Oke
           </Button>
         </Modal.Footer>
       </Modal>

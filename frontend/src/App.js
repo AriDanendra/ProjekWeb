@@ -67,6 +67,7 @@ function App() {
             </Layout>
           }
         />
+        
         {/* Anda bisa menambahkan protected route nanti */}
       </Routes>
     </Router>

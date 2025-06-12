@@ -56,13 +56,6 @@ const Layout = ({ children }) => {
         </Link>
 
         <Link 
-          className={`nav-link ${location.pathname === '/profil' ? 'active' : ''}`}
-          to="/profil"
-        >
-          <BsPerson className="nav-icon" /> Profil
-        </Link>
-
-        <Link 
           className={`nav-link ${location.pathname === '/logout' ? 'active' : ''}`}
           to="/login"
         >
