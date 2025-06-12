@@ -20,8 +20,7 @@ const Dashboard = () => {
   const [totalStok, setTotalStok] = useState(0);
   const [totalNilai, setTotalNilai] = useState(0);
   const [lowStockItems, setLowStockItems] = useState(0);
-  const [grafikMasuk, setGrafikMasuk] = useState([]);
-  const [grafikKeluar, setGrafikKeluar] = useState([]);
+  const [grafikGabungan, setGrafikGabungan] = useState([]);
 
   const loadData = async () => {
     try {
@@ -64,7 +63,7 @@ const Dashboard = () => {
 
     riwayatData.forEach(item => {
       const date = new Date(item.tanggal);
-      const key = `${date.getFullYear()}-${date.getMonth()}`;
+      const key = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
       const jumlah = item.jumlah || 0;
 
       if (item.jenis_transaksi === 'MASUK') {
@@ -74,23 +73,23 @@ const Dashboard = () => {
       }
     });
 
-    const allKeys = new Set([...Object.keys(masuk), ...Object.keys(keluar)]);
-    const grafikGabungan = Array.from(allKeys).map(key => {
+    const allKeys = Array.from(new Set([...Object.keys(masuk), ...Object.keys(keluar)]));
+    allKeys.sort(); // Sort ascendingly by 'YYYY-MM'
+
+    const grafik = allKeys.map(key => {
       const [year, month] = key.split('-');
+      const label = new Date(year, month - 1).toLocaleString('id-ID', {
+        month: 'long',
+        year: 'numeric'
+      });
       return {
-        bulan: new Date(year, month).toLocaleString('id-ID', { month: 'long', year: 'numeric' }),
+        bulan: label,
         masuk: masuk[key] || 0,
         keluar: keluar[key] || 0,
       };
-    }).sort((a, b) => {
-      const [bulanA, tahunA] = a.bulan.split(' ');
-      const [bulanB, tahunB] = b.bulan.split(' ');
-      const dateA = new Date(`${bulanA} 1, ${tahunA}`);
-      const dateB = new Date(`${bulanB} 1, ${tahunB}`);
-      return dateA - dateB;
     });
 
-    setGrafikMasuk(grafikGabungan);
+    setGrafikGabungan(grafik);
   };
 
   useEffect(() => {
@@ -186,11 +185,11 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* 📊 Grafik Gabungan */}
+        {/* Grafik Gabungan */}
         <div className="mb-5">
           <h5 className="mb-3">Grafik Barang Masuk & Keluar per Bulan</h5>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={grafikMasuk}>
+            <BarChart data={grafikGabungan}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="bulan" />
               <YAxis />
