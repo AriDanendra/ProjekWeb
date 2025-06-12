@@ -15,9 +15,9 @@ const BarangMasuk = () => {
   const [formData, setFormData] = useState({
     kode_barang: '',
     keterangan: '',
-    tanggal: new Date().toISOString().split('T')[0] // Default to today's date
+    tanggal: new Date().toISOString().split('T')[0]
   });
-  const [stokToAdd, setStokToAdd] = useState(1);
+  const [stokToAdd, setStokToAdd] = useState('');
   const [showNotifModal, setShowNotifModal] = useState(false);
   const [notifMessage, setNotifMessage] = useState('');
   const navigate = useNavigate();
@@ -38,7 +38,6 @@ const BarangMasuk = () => {
         return rest;
       });
       setBarang(filteredData);
-      // Sort by tanggal_masuk descending
       const sortedBarangMasuk = filteredData
         .filter(item => item.tanggal_masuk)
         .sort((a, b) => new Date(b.tanggal_masuk) - new Date(a.tanggal_masuk));
@@ -61,7 +60,10 @@ const BarangMasuk = () => {
   };
 
   const handleStokChange = (e) => {
-    setStokToAdd(parseInt(e.target.value) || 1);
+    const value = e.target.value;
+    if (value === '' || /^[0-9]+$/.test(value)) {
+      setStokToAdd(value);
+    }
   };
 
   const handleSubmitAdd = async (e) => {
@@ -70,33 +72,36 @@ const BarangMasuk = () => {
       const selectedItem = barang.find(item => item.kode_barang === formData.kode_barang);
       if (!selectedItem) throw new Error('Barang tidak ditemukan');
 
-      // Validate the date is not in the future
+      const stokBaru = parseInt(stokToAdd);
+      if (isNaN(stokBaru) || stokBaru < 1) {
+        throw new Error('Jumlah stok harus minimal 1');
+      }
+
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const selectedDate = new Date(formData.tanggal);
-      
       if (selectedDate > today) {
         throw new Error('Tanggal tidak boleh lebih dari hari ini');
       }
 
       const updateData = {
         ...selectedItem,
-        stok: (selectedItem.stok || 0) + stokToAdd,
+        stok: (selectedItem.stok || 0) + stokBaru,
         tanggal_masuk: formData.tanggal
       };
 
       await axios.put(`${API_URL}/${formData.kode_barang}`, {
         ...updateData,
-        keterangan: formData.keterangan || `Penambahan stok masuk ${stokToAdd} unit`,
+        keterangan: formData.keterangan || `Penambahan stok masuk ${stokBaru} unit`,
       });
 
       setShowAddModal(false);
       setFormData({
         kode_barang: '',
         keterangan: '',
-        tanggal: new Date().toISOString().split('T')[0] // Reset to today's date
+        tanggal: new Date().toISOString().split('T')[0]
       });
-      setStokToAdd(1);
+      setStokToAdd('');
 
       await loadData();
       showNotification('Barang masuk berhasil dicatat!');
@@ -211,7 +216,7 @@ const BarangMasuk = () => {
                 type="date"
                 value={formData.tanggal}
                 onChange={handleInputChange}
-                max={new Date().toISOString().split('T')[0]} // Prevent future dates
+                max={new Date().toISOString().split('T')[0]}
                 required
               />
               <Form.Text className="text-muted">
@@ -238,7 +243,7 @@ const BarangMasuk = () => {
                 keterangan: '',
                 tanggal: new Date().toISOString().split('T')[0]
               });
-              setStokToAdd(1);
+              setStokToAdd('');
             }}>
               Batal
             </Button>

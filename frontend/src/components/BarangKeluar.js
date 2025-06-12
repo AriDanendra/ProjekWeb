@@ -18,7 +18,8 @@ const BarangKeluar = () => {
     tanggal_keluar: new Date().toISOString().split('T')[0],
     keterangan: ''
   });
-  const [stokToReduce, setStokToReduce] = useState(1);
+  const [stokToReduce, setStokToReduce] = useState('');
+  const [stokError, setStokError] = useState('');
 
   const [showNotifModal, setShowNotifModal] = useState(false);
   const [notifMessage, setNotifMessage] = useState('');
@@ -60,7 +61,11 @@ const BarangKeluar = () => {
   };
 
   const handleStokChange = (e) => {
-    setStokToReduce(parseInt(e.target.value) || 1);
+    const value = e.target.value;
+    if (value === '' || /^[0-9]+$/.test(value)) {
+      setStokToReduce(value);
+      setStokError('');
+    }
   };
 
   const handleSubmitAdd = async (e) => {
@@ -69,19 +74,33 @@ const BarangKeluar = () => {
       const selectedItem = barang.find(item => item.kode_barang === formData.kode_barang);
       if (!selectedItem) throw new Error('Barang tidak ditemukan');
 
-      if ((selectedItem.stok || 0) < stokToReduce) {
-        throw new Error('Stok tidak mencukupi');
+      const jumlahKeluar = parseInt(stokToReduce);
+      if (isNaN(jumlahKeluar) || jumlahKeluar < 1) {
+        setStokError('Jumlah stok harus minimal 1');
+        return;
+      }
+
+      if ((selectedItem.stok || 0) < jumlahKeluar) {
+        setStokError('Stok tidak mencukupi');
+        return;
+      }
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const selectedDate = new Date(formData.tanggal_keluar);
+      if (selectedDate > today) {
+        throw new Error('Tanggal tidak boleh lebih dari hari ini');
       }
 
       const updateData = {
         ...selectedItem,
-        stok: (selectedItem.stok || 0) - stokToReduce,
+        stok: (selectedItem.stok || 0) - jumlahKeluar,
         tanggal_keluar: formData.tanggal_keluar
       };
 
       await axios.put(`${API_URL}/${formData.kode_barang}`, {
         ...updateData,
-        keterangan: formData.keterangan || 'Pengurangan stok keluar'
+        keterangan: formData.keterangan || `Pengurangan stok keluar ${jumlahKeluar} unit`
       });
 
       setShowAddModal(false);
@@ -90,7 +109,8 @@ const BarangKeluar = () => {
         tanggal_keluar: new Date().toISOString().split('T')[0],
         keterangan: ''
       });
-      setStokToReduce(1);
+      setStokToReduce('');
+      setStokError('');
 
       await loadData();
       showNotification('Barang keluar berhasil dicatat!');
@@ -164,7 +184,16 @@ const BarangKeluar = () => {
       </div>
 
       {/* Modal Tambah Barang Keluar */}
-      <Modal show={showAddModal} onHide={() => setShowAddModal(false)}>
+      <Modal show={showAddModal} onHide={() => {
+        setShowAddModal(false);
+        setFormData({
+          kode_barang: '',
+          tanggal_keluar: new Date().toISOString().split('T')[0],
+          keterangan: ''
+        });
+        setStokToReduce('');
+        setStokError('');
+      }}>
         <Modal.Header closeButton>
           <Modal.Title>Catat Barang Keluar</Modal.Title>
         </Modal.Header>
@@ -193,6 +222,7 @@ const BarangKeluar = () => {
                 type="date"
                 value={formData.tanggal_keluar}
                 onChange={handleInputChange}
+                max={new Date().toISOString().split('T')[0]}
                 required
               />
             </Form.Group>
@@ -205,7 +235,11 @@ const BarangKeluar = () => {
                 value={stokToReduce}
                 onChange={handleStokChange}
                 required
+                isInvalid={!!stokError}
               />
+              <Form.Control.Feedback type="invalid">
+                {stokError}
+              </Form.Control.Feedback>
             </Form.Group>
 
             <Form.Group controlId="keterangan" className="mb-3">
@@ -220,7 +254,16 @@ const BarangKeluar = () => {
             </Form.Group>
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowAddModal(false)}>
+            <Button variant="secondary" onClick={() => {
+              setShowAddModal(false);
+              setFormData({
+                kode_barang: '',
+                tanggal_keluar: new Date().toISOString().split('T')[0],
+                keterangan: ''
+              });
+              setStokToReduce('');
+              setStokError('');
+            }}>
               Batal
             </Button>
             <Button variant="danger" type="submit">
