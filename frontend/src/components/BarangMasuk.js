@@ -141,7 +141,6 @@ const BarangMasuk = () => {
                 <th>Harga</th>
                 <th>Stok</th>
                 <th>Tanggal Masuk</th>
-                <th>Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -158,15 +157,6 @@ const BarangMasuk = () => {
                     <td>{`Rp ${(item.harga || 0).toLocaleString('id-ID')}`}</td>
                     <td>{item.stok || 0}</td>
                     <td>{formatTanggal(item.tanggal_masuk)}</td>
-                    <td>
-                      <Button 
-                        variant="info" 
-                        size="sm"
-                        onClick={() => navigate(`/riwayat-stok/${item.kode_barang}`)}
-                      >
-                        Lihat Riwayat
-                      </Button>
-                    </td>
                   </tr>
                 ))
               )}
