@@ -208,7 +208,7 @@ const Dashboard = () => {
               <thead className="table-success">
                 <tr>
                   <th>Kode Barang</th>
-                  <th>Nama Barang</th>
+                  <th>Namaa Barang</th>
                   <th>Lokasi</th>
                   <th>Jumlah</th>
                   <th>Stok Sebelum</th>
