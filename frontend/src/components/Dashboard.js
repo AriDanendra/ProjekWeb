@@ -306,7 +306,7 @@ const Dashboard = () => {
                 {barang.filter(item => (item.stok || 0) < 5).length === 0 && (
                   <tr>
                     <td colSpan="6" className="text-center py-3">
-                      Tidak ada barang dengan stok rendah
+                      Tidak ada barang dengan stok rendah!
                     </td>
                   </tr>
                 )}
