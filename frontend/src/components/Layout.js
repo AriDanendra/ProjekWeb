@@ -55,15 +55,6 @@ const Layout = ({ children }) => {
           <BsClockHistory className="nav-icon" /> Riwayat Stok
         </Link>
 
-
-        {/* Tambahkan link Riwayat Stok */}
-        <Link 
-          className={`nav-link ${location.pathname === '/tes' ? 'active' : ''}`}
-          to="/tes"
-        >
-          <BsClockHistory className="nav-icon" /> tes
-        </Link>
-
         <Link 
           className={`nav-link ${location.pathname === '/logout' ? 'active' : ''}`}
           to="/login"

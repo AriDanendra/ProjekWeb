@@ -67,15 +67,6 @@ function App() {
             </Layout>
           }
         />
-
-        <Route
-          path="/tes"
-          element={
-            <Layout>
-              <RiwayatStok />
-            </Layout>
-          }
-        />
         
         {/* Anda bisa menambahkan protected route nanti */}
       </Routes>
