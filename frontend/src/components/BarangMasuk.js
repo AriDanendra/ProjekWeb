@@ -77,9 +77,11 @@ const BarangMasuk = () => {
         throw new Error('Jumlah stok harus minimal 1');
       }
 
+      // Perbaikan di bagian ini:
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const selectedDate = new Date(formData.tanggal);
+      selectedDate.setHours(0, 0, 0, 0); // Pastikan jam di-set ke 00:00:00
       if (selectedDate > today) {
         throw new Error('Tanggal tidak boleh lebih dari hari ini');
       }

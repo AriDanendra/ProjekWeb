@@ -86,8 +86,9 @@ const BarangKeluar = () => {
       }
 
       const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      today.setHours(0, 0, 0, 0); // Set ke awal hari
       const selectedDate = new Date(formData.tanggal_keluar);
+      selectedDate.setHours(0, 0, 0, 0); // Set ke awal hari
       if (selectedDate > today) {
         throw new Error('Tanggal tidak boleh lebih dari hari ini');
       }
@@ -149,7 +150,6 @@ const BarangKeluar = () => {
                 <th>Harga</th>
                 <th>Stok</th>
                 <th>Tanggal Keluar</th>
-                <th>Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -166,15 +166,6 @@ const BarangKeluar = () => {
                     <td>{`Rp ${(item.harga || 0).toLocaleString('id-ID')}`}</td>
                     <td>{item.stok || 0}</td>
                     <td>{item.tanggal_keluar ? formatTanggal(item.tanggal_keluar) : '-'}</td>
-                    <td>
-                      <Button 
-                        variant="info" 
-                        size="sm"
-                        onClick={() => navigate('/riwayat-stok')}
-                      >
-                        Lihat Riwayat
-                      </Button>
-                    </td>
                   </tr>
                 ))
               )}
